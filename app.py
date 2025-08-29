@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, send_file
+from flask import Flask, render_template, request, send_file, Response
+from datetime import datetime
 import qrcode
 import io, base64
 from io import BytesIO
@@ -85,6 +86,39 @@ def download_pdf():
         download_name="ForeverQR.pdf",
         mimetype="application/pdf"
     )
+
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
+@app.route("/sitemap.xml", methods=["GET"])
+def sitemap():
+    pages = []
+
+    # Get all routes in app
+    for rule in app.url_map.iter_rules():
+        # Include only GET routes that are not parameters
+        if "GET" in rule.methods and len(rule.arguments) == 0:
+            url = request.host_url.rstrip("/") + str(rule.rule)
+            pages.append({
+                "loc": url,
+                "lastmod": datetime.date.today().isoformat()
+            })
+
+    # Generate XML
+    sitemap_xml = """<?xml version="1.0" encoding="UTF-8"?>\n"""
+    sitemap_xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+
+    for page in pages:
+        sitemap_xml += "  <url>\n"
+        sitemap_xml += f"    <loc>{page['loc']}</loc>\n"
+        sitemap_xml += f"    <lastmod>{page['lastmod']}</lastmod>\n"
+        sitemap_xml += "  </url>\n"
+
+    sitemap_xml += "</urlset>"
+
+    response = Response(sitemap_xml, mimetype="application/xml")
+    return response
 
 if __name__ == "__main__":
     app.run(debug=True)
