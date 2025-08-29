@@ -91,22 +91,17 @@ def download_pdf():
 def about():
     return render_template("about.html")
 
+from flask import Response, request
+import datetime
+
 @app.route("/sitemap.xml", methods=["GET"])
 def sitemap():
-    pages = []
+    pages = [
+        {"loc": request.host_url.rstrip("/") + "/", "lastmod": datetime.date.today().isoformat()},
+        {"loc": request.host_url.rstrip("/") + "/about", "lastmod": datetime.date.today().isoformat()}
+    ]
 
-    # Get all routes in app
-    for rule in app.url_map.iter_rules():
-        # Include only GET routes that are not parameters
-        if "GET" in rule.methods and len(rule.arguments) == 0:
-            url = request.host_url.rstrip("/") + str(rule.rule)
-            pages.append({
-                "loc": url,
-                "lastmod": datetime.date.today().isoformat()
-            })
-
-    # Generate XML
-    sitemap_xml = """<?xml version="1.0" encoding="UTF-8"?>\n"""
+    sitemap_xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
     sitemap_xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
 
     for page in pages:
@@ -117,8 +112,7 @@ def sitemap():
 
     sitemap_xml += "</urlset>"
 
-    response = Response(sitemap_xml, mimetype="application/xml")
-    return response
+    return Response(sitemap_xml, mimetype="application/xml")
 
 if __name__ == "__main__":
     app.run(debug=True)
